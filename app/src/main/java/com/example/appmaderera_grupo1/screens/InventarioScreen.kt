@@ -26,6 +26,19 @@ fun InventarioScreen(lotes: List<LoteMadera>) {
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
+            // 1. Tarjeta de Recursos Nativos (Cámara + GPS)
+            item {
+                SeccionRecursosNativos(
+                    onFotoCapturada = { bitmap ->
+                        // Evidencia fotográfica capturada
+                    },
+                    onUbicacionObtenida = { coords ->
+                        // Coordenadas GPS capturadas
+                    }
+                )
+            }
+
+            // 2. Listado de lotes de madera
             items(lotes) { lote ->
                 Card(
                     modifier = Modifier.fillMaxWidth(),
