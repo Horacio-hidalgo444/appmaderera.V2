@@ -81,6 +81,10 @@ fun TarjetaClimaApi(
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
+            Text(
+                text = "Coordenadas consultadas: $latitud, $longitud",
+                style = MaterialTheme.typography.bodySmall
+            )
             Spacer(modifier = Modifier.height(8.dp))
 
             when {
