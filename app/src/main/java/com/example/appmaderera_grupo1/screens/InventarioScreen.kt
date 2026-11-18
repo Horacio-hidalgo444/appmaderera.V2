@@ -1,5 +1,6 @@
 package com.example.appmaderera_grupo1.ui.screens
 
+
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -38,7 +39,12 @@ fun InventarioScreen(lotes: List<LoteMadera>) {
                 )
             }
 
-            // 2. Listado de lotes de madera
+            // 2. Tarjeta de Consumo de API Externa (Open-Meteo)
+            item {
+                TarjetaClimaApi()
+            }
+
+            // 3. Listado de lotes de madera
             items(lotes) { lote ->
                 Card(
                     modifier = Modifier.fillMaxWidth(),
