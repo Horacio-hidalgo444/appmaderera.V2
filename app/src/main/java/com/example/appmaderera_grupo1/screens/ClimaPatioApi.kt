@@ -16,14 +16,16 @@ import java.net.URL
 data class ClimaPatio(
     val temperatura: Double,
     val humedadAmbiental: Int,
-    val recomendacionSecado: String
+    val recomendacionSecado: String,
+    val probLluviaManana: Int,
+    val alertaLluvia: String
 )
 
 suspend fun consultarClimaOpenMeteo(lat: Double, lon: Double): Result<ClimaPatio> =
     withContext(Dispatchers.IO) {
         try {
             val urlString =
-                "https://api.open-meteo.com/v1/forecast?latitude=$lat&longitude=$lon&current=temperature_2m,relative_humidity_2m"
+                "https://api.open-meteo.com/v1/forecast?latitude=$lat&longitude=$lon&current=temperature_2m,relative_humidity_2m&daily=precipitation_probability_max&forecast_days=2&timezone=auto"
             val conexion = (URL(urlString).openConnection() as HttpURLConnection).apply {
                 requestMethod = "GET"
                 connectTimeout = 8000
@@ -32,17 +34,43 @@ suspend fun consultarClimaOpenMeteo(lat: Double, lon: Double): Result<ClimaPatio
 
             if (conexion.responseCode == 200) {
                 val respuesta = conexion.inputStream.bufferedReader().use { it.readText() }
-                val current = JSONObject(respuesta).getJSONObject("current")
+                val jsonRoot = JSONObject(respuesta)
+
+                // 1. Lectura del clima actual
+                val current = jsonRoot.getJSONObject("current")
                 val temp = current.getDouble("temperature_2m")
                 val humedad = current.getInt("relative_humidity_2m")
 
-                val consejo = if (humedad <= 65) {
+                val consejoSecado = if (humedad <= 65) {
                     "Condición óptima para secado natural al aire libre."
                 } else {
                     "Humedad ambiental alta: mantener lotes en cámara de secado."
                 }
 
-                Result.success(ClimaPatio(temp, humedad, consejo))
+                // 2. Lectura del pronóstico de lluvia para mañana (índice 1 del arreglo diario)
+                val daily = jsonRoot.optJSONObject("daily")
+                val probabilidades = daily?.optJSONArray("precipitation_probability_max")
+                val probManana = if (probabilidades != null && probabilidades.length() > 1) {
+                    probabilidades.optInt(1, 0)
+                } else {
+                    probabilidades?.optInt(0, 0) ?: 0
+                }
+
+                val textoAlertaLluvia = if (probManana >= 50) {
+                    "⚠️ Alerta de lluvia mañana ($probManana%): cubrir pilas de secado natural."
+                } else {
+                    "Pronóstico mañana: baja probabilidad de lluvia ($probManana%)."
+                }
+
+                Result.success(
+                    ClimaPatio(
+                        temperatura = temp,
+                        humedadAmbiental = humedad,
+                        recomendacionSecado = consejoSecado,
+                        probLluviaManana = probManana,
+                        alertaLluvia = textoAlertaLluvia
+                    )
+                )
             } else {
                 Result.failure(Exception("Error HTTP ${conexion.responseCode}"))
             }
@@ -99,6 +127,17 @@ fun TarjetaClimaApi(
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(
+                        text = clima!!.alertaLluvia,
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Medium,
+                        color = if (clima!!.probLluviaManana >= 50) {
+                            MaterialTheme.colorScheme.error
+                        } else {
+                            MaterialTheme.colorScheme.onSecondaryContainer
+                        }
                     )
                 }
             }
