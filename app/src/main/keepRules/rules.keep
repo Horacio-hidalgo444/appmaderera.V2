@@ -1,12 +1,33 @@
-# Add project specific R8 rules here.
-# AGP will combine all keep rule files in src/main/keepRules to pass to R8
-#
-# For more details, see
-#   https://d.android.com/r/tools/r8/keep-rules
+# --- 1. Evitar reempaquetado de clases (soluciona el IllegalAccessError) ---
+-dontobfuscate
+-keeppackagenames kotlin.**, kotlinx.**, androidx.**
 
-# If your project uses WebView with JS, uncomment the following
-# and specify the fully qualified class name to the JavaScript interface
-# class:
-#-keepclassmembers class fqcn.of.javascript.interface.for.webview {
-#   public *;
-#}
+# --- 2. Evitar que R8 elimine clases internas de Kotlin ---
+-keep class kotlin.** { *; }
+-keep class kotlinx.** { *; }
+-dontwarn kotlin.**
+-dontwarn kotlinx.**
+
+# --- 3. Mantener todas las clases, ViewModels y DTOs de App Maderera ---
+-keep class com.example.appmaderera_grupo1.** { *; }
+
+-keepclassmembers class * extends androidx.lifecycle.ViewModel {
+    <init>(...);
+}
+
+# --- 4. Reglas para Retrofit 2, Gson y OkHttp en modo Release ---
+-keepattributes Signature, InnerClasses, EnclosingMethod
+-keepattributes RuntimeVisibleAnnotations, RuntimeVisibleParameterAnnotations
+-keepattributes AnnotationDefault
+
+-keepclassmembers,allowshrinking,allowobfuscation interface * {
+    @retrofit2.http.* <methods>;
+}
+
+-keepclassmembers class * {
+    @com.google.gson.annotations.SerializedName <fields>;
+}
+
+-dontwarn retrofit2.**
+-dontwarn okhttp3.**
+-dontwarn okio.**
